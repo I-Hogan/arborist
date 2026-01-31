@@ -1,1 +1,21 @@
-# A list of tasks that need doing. 
+# A list of tasks that need doing. (Should be empty except for the title when there are not tasks remaining)
+
+1. Come up with a high level plan for the project and write it out in 
+`spec.md`. Brainstorm which language(s)/framework(s) you will need to start 
+the project (include testing and code style frameworks/strategies). Follow 
+`best_practices.md` and fill in those details here as well. Update the index 
+sections of the readmes.
+2. Based on the languages and frameworks used, create a script `scripts/style.sh` that runs all
+automatic style checks that will be run in this project. See `best_practices.md`. 
+3. Create a testing script `scripts/test.sh` to run all the fast tests. See
+`best_practices.md`. Tests should be run in parallel where possible.
+4. Create a unified script called `scripts/pre_commit.sh` which runs all the auto
+formatting tools, style checks, and fast running tests.
+5. Populate this project's `code_review.md` with style and functional checks 
+that cannot be automated.
+6. Write small test functions in each language the project is planning to use as well
+as a basic unit test. Run `scripts/pre_commit.sh` to make sure you can run the full test suite,
+installing any needed tooling or dependencies and debugging any issues until it runs
+cleanly. It is vital you can run this.
+7. Break down all the work required to make the Minimum Viable Prototype (MVP) into 
+manageable pieces. Add these to the bottom of work_log.md as work items.

@@ -6,7 +6,7 @@ import process from "node:process";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-// Treat a title-only tasks.md as "done" without parsing task contents.
+// Treat a title-only list file as "done" without parsing task contents.
 const hasWorkItems = (contents) =>
   contents
     .split(/\r?\n/)
@@ -24,7 +24,13 @@ const main = async () => {
   const timeBudget = 60 * 60 * 1000;
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const projectSetupPath = path.join(scriptDir, "arborist", "project_setup.md");
+  const completeNextItemPath = path.join(
+    scriptDir,
+    "arborist",
+    "complete_next_item.md"
+  );
   const tasksPath = path.join(projectDir, "tasks.md");
+  const todoPath = path.join(projectDir, "todo.md");
   const agentsPath = path.join(projectDir, "AGENTS.md");
 
   if (!fs.existsSync(projectDir)) {
@@ -59,12 +65,11 @@ const main = async () => {
   const deadline = Date.now() + timeBudget;
   let isFirstTask = true;
 
-  // If tasks.md is missing, send Codex to the project setup instructions.
-  if (!fs.existsSync(tasksPath)) {
+  // If core project files are missing, send Codex to the project setup instructions.
+  if (!fs.existsSync(tasksPath) || !fs.existsSync(todoPath)) {
     const setupPrompt = [
-      `tasks.md is missing in ${projectDir}.`,
+      `tasks.md or todo.md is missing in ${projectDir}.`,
       `Follow the project setup instructions in ${projectSetupPath}.`,
-      "Create tasks.md as part of setup if required.",
       `Read AGENTS.md at ${agentsPath} before you begin if it exists.`,
       "",
       `Project root: ${projectDir}`,
@@ -72,7 +77,7 @@ const main = async () => {
     await runCodex(setupPrompt);
   }
 
-  // Loop until time runs out or tasks.md has no remaining tasks.
+  // Loop until time runs out or todo.md has no remaining items.
   while (true) {
     const timeLeft = deadline - Date.now();
     if (timeLeft <= 0) {
@@ -80,29 +85,29 @@ const main = async () => {
       break;
     }
 
-    if (!fs.existsSync(tasksPath)) {
-      console.log("tasks.md is still missing. Stopping.");
+    if (!fs.existsSync(todoPath)) {
+      console.log("todo.md is still missing. Stopping.");
       break;
     }
 
     let contents;
     try {
-      contents = await fsp.readFile(tasksPath, "utf8");
+      contents = await fsp.readFile(todoPath, "utf8");
     } catch (error) {
-      console.error(`Unable to read tasks.md: ${error.message}`);
+      console.error(`Unable to read todo.md: ${error.message}`);
       process.exit(1);
     }
 
     if (!hasWorkItems(contents)) {
-      console.log("tasks.md has no remaining tasks. Stopping.");
+      console.log("todo.md has no remaining items. Stopping.");
       break;
     }
 
-    // Don't parse tasks: point Codex at tasks.md and ask for the top item.
+    // Don't parse todo: point Codex at todo.md and ask for the next item.
     const promptLines = [
-      `Work on the top task in ${tasksPath}.`,
+      `Complete the next item in ${todoPath}.`,
+      `Follow the instructions in ${completeNextItemPath}.`,
       `Project root: ${projectDir}`,
-      `Please remove the completed task from ${tasksPath} once finished.`,
       `Time remaining: ${Math.max(0, timeLeft)}ms`,
     ];
 

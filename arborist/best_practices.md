@@ -1,5 +1,19 @@
 # A general guide to best-practices.
 
+## Choosing languages, frameworks, and tools
+
+Think deeply about which languages, frameworks, and tools will be best for 
+the long-term health of the project.
+- Keep it simple: A smaller, more basic toolset will be easier to maintain.
+- Language speed vs. usability:
+  - Only use really fast languages when speed is necessary.
+  - Library support and ease of human coding are also important.
+
+Add files to the research explaining the options you considered for the project, 
+the benefits and drawbacks of each, and why you ultimately chose what you did.
+
+Always search for and use the newest versions. This is important for security.
+
 ## Code quality
 
 For code quality, we want to automate as much as possible. Priority is:
@@ -30,4 +44,4 @@ These should look as close to what the user does as possible.
   - i.e. if there is a GUI, the test should perform clicks on the GUI. 
   If the project uses a CLI, the tests should send messages there. etc.
 
-Inegration tests should be set up once the interface has been built.
+Integration tests should be set up once the interface has been built.
