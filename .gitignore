@@ -24,3 +24,8 @@ dist/
 
 # Codex
 .codex/
+
+# Ignore top-level project directories except arborist/
+/*/
+!/arborist/
+!/arborist/**

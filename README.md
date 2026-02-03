@@ -4,13 +4,13 @@
 Simply call the launch script with the name of the project you want to
 arborist to work on.
 
-```./run_arborist.sh <folder>```
+```./arborist/scripts/run_arborist.sh <folder>```
 
 ## Setting up a new project.
 
 1. Create a new folder in the project (If this is managed in git independently add it to the .gitignore)
 2. Add a file to the new project called SEED.md described below.
-3. Run `run_arborist.sh` on the file!
+3. Run `arborist/scripts/run_arborist.sh` on the file!
 
 ## Using Arborist
 

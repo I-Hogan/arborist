@@ -5,12 +5,13 @@
 the project (include testing and code style frameworks/strategies). Follow 
 `best_practices.md` and fill in those details here as well. Update the index 
 sections of the readmes.
-2. Based on the languages and frameworks used, create a script `scripts/style.sh` that runs all
-automatic style checks that will be run in this project. See `best_practices.md`. 
+2. Based on the languages and frameworks used set up all the automatic style checks that 
+will be run in this project. Include a type checking tool if necessary. See `best_practices.md`.
+
 3. Create a testing script `scripts/test.sh` to run all the fast tests. See
 `best_practices.md`. Tests should be run in parallel where possible.
 4. Create a unified script called `scripts/pre_commit.sh` which runs all the auto
-formatting tools, style checks, and fast running tests.
+formatting tools, style checks, compiles if necessary, and fast running tests.
 5. Create a `README.md` for the project and a `scripts/setup.sh` script which 
 installs any requirements and get the project ready to run (any database migrations, 
 builds, etc.)

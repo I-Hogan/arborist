@@ -12,37 +12,81 @@ const hasWorkItems = (contents) =>
     .split(/\r?\n/)
     .some((raw) => raw.trim() && !raw.trim().startsWith("#"));
 
-const main = async () => {
-  const args = process.argv.slice(2);
-  if (args.length < 1) {
-    console.log("Usage: arborist.mjs <project_dir>");
-    process.exit(1);
+const sleep = (ms) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+const readFirstLine = (contents) => {
+  const [firstLine] = contents.split(/\r?\n/);
+  return firstLine ?? "";
+};
+
+const clearListFile = async (filePath) => {
+  if (!fs.existsSync(filePath)) {
+    return;
+  }
+  const contents = await fsp.readFile(filePath, "utf8");
+  const firstLine = readFirstLine(contents);
+  const updated = firstLine ? `${firstLine}\n` : "";
+  await fsp.writeFile(filePath, updated, "utf8");
+};
+
+const hasProjectIndicators = (projectDir) => {
+  const indicators = [
+    "tasks.md",
+    "todo.md",
+    "SEED.md",
+    "feedback.md",
+    "user_requests.md",
+  ];
+  return indicators.some((fileName) =>
+    fs.existsSync(path.join(projectDir, fileName))
+  );
+};
+
+const discoverProjects = async (rootDir) => {
+  const projects = [];
+
+  if (hasProjectIndicators(rootDir)) {
+    projects.push(rootDir);
   }
 
-  const projectDir = path.resolve(args[0]);
-  // Fixed 1-hour budget for a run.
-  const timeBudget = 60 * 60 * 1000;
-  const maxIterations = 100;
-  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-  const projectSetupPath = path.join(scriptDir, "arborist", "project_setup.md");
+  const entries = await fsp.readdir(rootDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    if (entry.name.startsWith(".") || entry.name === "node_modules") {
+      continue;
+    }
+    const candidate = path.join(rootDir, entry.name);
+    projects.push(candidate);
+  }
+
+  return projects;
+};
+
+const processProject = async ({
+  projectDir,
+  arboristDir,
+  repoRoot,
+  timeBudget,
+}) => {
+  const projectSetupPath = path.join(arboristDir, "project_setup.md");
   const completeNextItemPath = path.join(
-    scriptDir,
-    "arborist",
+    arboristDir,
     "complete_next_item.md"
   );
   const tasksPath = path.join(projectDir, "tasks.md");
   const todoPath = path.join(projectDir, "todo.md");
+  const userRequestsPath = path.join(projectDir, "user_requests.md");
   const feedbackPath = path.join(projectDir, "feedback.md");
   const agentsPath = path.join(projectDir, "AGENTS.md");
 
-  if (!fs.existsSync(projectDir)) {
-    console.error(`Project folder not found: ${projectDir}`);
-    process.exit(1);
-  }
-
   const spawnCodexExec = (prompt) => {
     const child = spawn("codex", ["exec", prompt], {
-      cwd: scriptDir,
+      cwd: repoRoot,
       stdio: ["inherit", "inherit", "pipe"],
     });
 
@@ -117,8 +161,16 @@ const main = async () => {
         reject(new Error(`codex exec exited with code ${code}`));
       });
     });
+
   const deadline = Date.now() + timeBudget;
   let isFirstTask = true;
+  let finishedWithoutWork = false;
+  let sawTimeout = false;
+
+  if (!fs.existsSync(projectDir)) {
+    console.error(`Project folder not found: ${projectDir}`);
+    return;
+  }
 
   // If core project files are missing, send Codex to the project setup instructions.
   if (!fs.existsSync(tasksPath) || !fs.existsSync(todoPath)) {
@@ -133,12 +185,7 @@ const main = async () => {
   }
 
   // Loop until time runs out or todo.md and tasks.md have no remaining items.
-  let iterations = 0;
   while (true) {
-    if (iterations >= maxIterations) {
-      console.log(`Max iterations (${maxIterations}) reached. Stopping.`);
-      break;
-    }
     const timeLeft = deadline - Date.now();
     if (timeLeft <= 0) {
       console.log("Time budget reached. Stopping before starting a new task.");
@@ -177,6 +224,7 @@ const main = async () => {
       console.log(
         "todo.md, tasks.md, and feedback.md have no remaining items. Stopping."
       );
+      finishedWithoutWork = true;
       break;
     }
 
@@ -199,10 +247,59 @@ const main = async () => {
     const taskPrompt = promptLines.join("\n");
 
     const execResult = await runCodexWithTimeout(taskPrompt, 10 * 60 * 1000);
+    if (execResult.timedOut) {
+      sawTimeout = true;
+    }
     if (!execResult.timedOut) {
       isFirstTask = false;
     }
-    iterations += 1;
+  }
+
+  if (finishedWithoutWork && !sawTimeout) {
+    await clearListFile(tasksPath);
+    await clearListFile(todoPath);
+    await clearListFile(userRequestsPath);
+  } else if (finishedWithoutWork && sawTimeout) {
+    console.log(
+      "Skipping list clearing because a previous task timed out in this run."
+    );
+  }
+};
+
+const main = async () => {
+  const args = process.argv.slice(2);
+  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+  const arboristDir = path.resolve(scriptDir, "..");
+  const repoRoot = path.resolve(arboristDir, "..");
+  const rootDir = path.resolve(args[0] ?? repoRoot);
+  if (!fs.existsSync(rootDir)) {
+    console.error(`Projects folder not found: ${rootDir}`);
+    process.exit(1);
+  }
+
+  // Fixed 4-hour budget for each project run.
+  const timeBudget = 4 * 60 * 60 * 1000;
+
+  while (true) {
+    const projects = await discoverProjects(rootDir);
+    if (projects.length === 0) {
+      console.log(
+        `No projects with tasks.md or todo.md found in ${rootDir}.`
+      );
+    }
+
+    for (const projectDir of projects) {
+      console.log(`\n=== Arborist: ${projectDir} ===\n`);
+      await processProject({
+        projectDir,
+        arboristDir,
+        repoRoot,
+        timeBudget,
+      });
+    }
+
+    console.log("All projects processed. Waiting 60 seconds.");
+    await sleep(60 * 1000);
   }
 };
 

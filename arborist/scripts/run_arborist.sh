@@ -4,6 +4,7 @@ set -euo pipefail
 echo "Launching arborist..."
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+project_root=$(cd "$script_dir/../.." && pwd)
 
 if ! command -v node >/dev/null 2>&1; then
   echo "Node.js is required to run arborist.mjs." >&2
@@ -15,8 +16,8 @@ if ! command -v npm >/dev/null 2>&1; then
   exit 1
 fi
 
-if [ ! -f "$script_dir/package.json" ]; then
-  cat <<'JSON' > "$script_dir/package.json"
+if [ ! -f "$project_root/package.json" ]; then
+  cat <<'JSON' > "$project_root/package.json"
 {
   "name": "arborist",
   "private": true,
@@ -28,8 +29,12 @@ if [ ! -f "$script_dir/package.json" ]; then
 JSON
 fi
 
-if [ ! -d "$script_dir/node_modules" ]; then
-  npm install --silent
+if [ ! -d "$project_root/node_modules" ]; then
+  npm --prefix "$project_root" install --silent
+fi
+
+if [ "$#" -eq 0 ]; then
+  exec node "$script_dir/arborist.mjs" "$project_root"
 fi
 
 exec node "$script_dir/arborist.mjs" "$@"
