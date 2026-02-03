@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Classic CLI Boardgames - Local Web UI</title>
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <div class="ambient"></div>
+    <div class="page">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Local-only web GUI</p>
+          <h1>Classic CLI Boardgames</h1>
+          <p class="tagline">
+            Play chess, checkers, backgammon, or go in a modern browser UI that
+            stays true to the CLI rules.
+          </p>
+        </div>
+        <div class="status-pill" id="session-pill">No active session</div>
+      </header>
+
+      <main class="grid">
+        <section class="panel setup">
+          <h2>New Match</h2>
+          <p class="panel-subtitle">Choose a game and opponent style.</p>
+          <form id="setup-form" class="stack">
+            <label>
+              Game
+              <select id="game-select" name="game"></select>
+            </label>
+            <label>
+              Difficulty
+              <select id="difficulty-select" name="difficulty"></select>
+            </label>
+            <label>
+              Player mode
+              <select id="mode-select" name="mode"></select>
+            </label>
+            <button class="primary" type="submit">Start game</button>
+          </form>
+          <div class="session-meta" id="session-meta">
+            <div>
+              <span class="meta-label">Mode</span>
+              <span id="meta-mode">-</span>
+            </div>
+            <div>
+              <span class="meta-label">Difficulty</span>
+              <span id="meta-difficulty">-</span>
+            </div>
+            <div>
+              <span class="meta-label">Turn</span>
+              <span id="meta-turn">-</span>
+            </div>
+          </div>
+          <button id="help-button" class="ghost" type="button">Help</button>
+          <pre id="help-output" class="help"></pre>
+        </section>
+
+        <section class="panel play">
+          <div class="panel-header">
+            <div>
+              <h2>Board</h2>
+              <p class="panel-subtitle" id="board-subtitle">
+                Start a match to render the board.
+              </p>
+            </div>
+            <div class="controls">
+              <button id="restart-button" type="button">Restart</button>
+              <button id="end-button" type="button">End</button>
+            </div>
+          </div>
+
+          <div id="board-output" class="board">
+            <div id="board-visual" class="board-visual"></div>
+            <div id="board-notes" class="board-notes"></div>
+          </div>
+
+          <form id="move-form" class="move-form">
+            <input
+              id="move-input"
+              type="text"
+              placeholder="Enter a move (e.g., e2e4, D4, pass)"
+              autocomplete="off"
+            />
+            <button class="primary" type="submit">Submit move</button>
+          </form>
+
+          <div class="action-row">
+            <button id="ai-step-button" type="button">Next move (AI)</button>
+            <button id="auto-button" type="button">Auto-play off</button>
+            <div class="status-text" id="status-text">Waiting for a session.</div>
+          </div>
+
+          <div class="log-card">
+            <div class="log-header">
+              <h3>Match log</h3>
+              <span id="log-count">0 entries</span>
+            </div>
+            <ul id="log-list" class="log-list"></ul>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        Runs locally on your machine. Close the terminal window to stop the
+        server.
+      </footer>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

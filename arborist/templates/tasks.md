@@ -11,11 +11,14 @@ automatic style checks that will be run in this project. See `best_practices.md`
 `best_practices.md`. Tests should be run in parallel where possible.
 4. Create a unified script called `scripts/pre_commit.sh` which runs all the auto
 formatting tools, style checks, and fast running tests.
-5. Populate this project's `code_review.md` with style and functional checks 
+5. Create a `README.md` for the project and a `scripts/setup.sh` script which 
+installs any requirements and get the project ready to run (any database migrations, 
+builds, etc.)
+6. Populate this project's `code_review.md` with style and functional checks 
 that cannot be automated.
-6. Write small test functions in each language the project is planning to use as well
+7. Write small test functions in each language the project is planning to use as well
 as a basic unit test. Run `scripts/pre_commit.sh` to make sure you can run the full test suite,
 installing any needed tooling or dependencies and debugging any issues until it runs
 cleanly. It is vital you can run this.
-7. Break down all the work required to make the Minimum Viable Prototype (MVP) into 
-manageable pieces. Add these to the bottom of work_log.md as work items.
+8. Break down all the work required to make the Minimum Viable Prototype (MVP) into 
+manageable pieces. Add these to the bottom of `todo.md` as work items.

@@ -22,6 +22,7 @@ const main = async () => {
   const projectDir = path.resolve(args[0]);
   // Fixed 1-hour budget for a run.
   const timeBudget = 60 * 60 * 1000;
+  const maxIterations = 100;
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const projectSetupPath = path.join(scriptDir, "arborist", "project_setup.md");
   const completeNextItemPath = path.join(
@@ -31,6 +32,7 @@ const main = async () => {
   );
   const tasksPath = path.join(projectDir, "tasks.md");
   const todoPath = path.join(projectDir, "todo.md");
+  const feedbackPath = path.join(projectDir, "feedback.md");
   const agentsPath = path.join(projectDir, "AGENTS.md");
 
   if (!fs.existsSync(projectDir)) {
@@ -38,13 +40,23 @@ const main = async () => {
     process.exit(1);
   }
 
+  const spawnCodexExec = (prompt) => {
+    const child = spawn("codex", ["exec", prompt], {
+      cwd: scriptDir,
+      stdio: ["inherit", "inherit", "pipe"],
+    });
+
+    if (child.stderr) {
+      child.stderr.pipe(process.stdout);
+    }
+
+    return child;
+  };
+
   // Run Codex CLI so it prints the same sanitized summary output as `codex exec`.
   const runCodex = (prompt) =>
     new Promise((resolve, reject) => {
-      const child = spawn("codex", ["exec", prompt], {
-        cwd: scriptDir,
-        stdio: "inherit",
-      });
+      const child = spawnCodexExec(prompt);
 
       child.on("error", (error) => {
         if (error.code === "ENOENT") {
@@ -57,6 +69,49 @@ const main = async () => {
       child.on("close", (code) => {
         if (code === 0) {
           resolve();
+          return;
+        }
+        reject(new Error(`codex exec exited with code ${code}`));
+      });
+    });
+  const runCodexWithTimeout = (prompt, timeoutMs) =>
+    new Promise((resolve, reject) => {
+      const child = spawnCodexExec(prompt);
+      let timedOut = false;
+      let killTimer;
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        console.log(
+          `codex exec exceeded ${timeoutMs}ms; stopping and retrying.`
+        );
+        child.kill("SIGTERM");
+        killTimer = setTimeout(() => child.kill("SIGKILL"), 5000);
+      }, timeoutMs);
+
+      const cleanup = () => {
+        clearTimeout(timeout);
+        if (killTimer) {
+          clearTimeout(killTimer);
+        }
+      };
+
+      child.on("error", (error) => {
+        cleanup();
+        if (error.code === "ENOENT") {
+          reject(new Error("codex CLI not found on PATH."));
+          return;
+        }
+        reject(error);
+      });
+
+      child.on("close", (code) => {
+        cleanup();
+        if (timedOut) {
+          resolve({ timedOut: true });
+          return;
+        }
+        if (code === 0) {
+          resolve({ timedOut: false });
           return;
         }
         reject(new Error(`codex exec exited with code ${code}`));
@@ -77,29 +132,51 @@ const main = async () => {
     await runCodex(setupPrompt);
   }
 
-  // Loop until time runs out or todo.md has no remaining items.
+  // Loop until time runs out or todo.md and tasks.md have no remaining items.
+  let iterations = 0;
   while (true) {
+    if (iterations >= maxIterations) {
+      console.log(`Max iterations (${maxIterations}) reached. Stopping.`);
+      break;
+    }
     const timeLeft = deadline - Date.now();
     if (timeLeft <= 0) {
       console.log("Time budget reached. Stopping before starting a new task.");
       break;
     }
 
-    if (!fs.existsSync(todoPath)) {
-      console.log("todo.md is still missing. Stopping.");
+    if (!fs.existsSync(todoPath) || !fs.existsSync(tasksPath)) {
+      console.log("todo.md or tasks.md is still missing. Stopping.");
       break;
     }
 
-    let contents;
+    let todoContents;
+    let tasksContents;
+    let feedbackContents = "";
     try {
-      contents = await fsp.readFile(todoPath, "utf8");
+      todoContents = await fsp.readFile(todoPath, "utf8");
+      tasksContents = await fsp.readFile(tasksPath, "utf8");
+      if (fs.existsSync(feedbackPath)) {
+        feedbackContents = await fsp.readFile(feedbackPath, "utf8");
+      }
     } catch (error) {
-      console.error(`Unable to read todo.md: ${error.message}`);
+      console.error(
+        `Unable to read todo.md, tasks.md, or feedback.md: ${error.message}`
+      );
       process.exit(1);
     }
 
-    if (!hasWorkItems(contents)) {
-      console.log("todo.md has no remaining items. Stopping.");
+    const hasFeedbackItems = feedbackContents
+      ? hasWorkItems(feedbackContents)
+      : false;
+    if (
+      !hasWorkItems(todoContents) &&
+      !hasWorkItems(tasksContents) &&
+      !hasFeedbackItems
+    ) {
+      console.log(
+        "todo.md, tasks.md, and feedback.md have no remaining items. Stopping."
+      );
       break;
     }
 
@@ -121,8 +198,11 @@ const main = async () => {
 
     const taskPrompt = promptLines.join("\n");
 
-    await runCodex(taskPrompt);
-    isFirstTask = false;
+    const execResult = await runCodexWithTimeout(taskPrompt, 10 * 60 * 1000);
+    if (!execResult.timedOut) {
+      isFirstTask = false;
+    }
+    iterations += 1;
   }
 };
 

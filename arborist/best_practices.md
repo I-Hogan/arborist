@@ -45,3 +45,7 @@ These should look as close to what the user does as possible.
   If the project uses a CLI, the tests should send messages there. etc.
 
 Integration tests should be set up once the interface has been built.
+
+## Development
+
+- If you come across a bug, if it is small fix it, if it is large log it in the backlog.
