@@ -7,16 +7,17 @@ the project (include testing and code style frameworks/strategies). Follow
 sections of the readmes.
 2. Based on the languages and frameworks used set up all the automatic style checks that 
 will be run in this project. Include a type checking tool if necessary. See `best_practices.md`.
-
-3. Create a testing script `scripts/test.sh` to run all the fast tests. See
-`best_practices.md`. Tests should be run in parallel where possible.
+3. Set up the testing framework(s) for this project. See `best_practices.md`. 
+Write a small piece of code in each language to ensure tests are running quickly. 
+Tests should be run in parallel where possible.
 4. Create a unified script called `scripts/pre_commit.sh` which runs all the auto
-formatting tools, style checks, compiles if necessary, and fast running tests.
+formatting tools, style checks, compiles if necessary, and fast running tests. This 
+script needs to run quickly.
 5. Create a `README.md` for the project and a `scripts/setup.sh` script which 
 installs any requirements and get the project ready to run (any database migrations, 
 builds, etc.)
 6. Populate this project's `code_review.md` with style and functional checks 
-that cannot be automated.
+that cannot be automated. Use `best_practices.md` and industry standards for what to add.
 7. Write small test functions in each language the project is planning to use as well
 as a basic unit test. Run `scripts/pre_commit.sh` to make sure you can run the full test suite,
 installing any needed tooling or dependencies and debugging any issues until it runs

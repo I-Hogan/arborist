@@ -1,8 +1,11 @@
 # Steps for completing the next `todo.md` item
 
 1. Check if there is any user feedback in `feedback.md`. If there is, decide whether 
-it makes sense to add either todo work items or tasks in response. Add new items to 
-the bottom of the lists. Once done, remove the feedback from the `feedback.md` file.
+it makes sense to add either a todo work item(s) (or a task if it is a small request) 
+in response. Add new items to the bottom of the list. Once done, remove the feedback 
+from the `feedback.md` file. Items in todo will be broken into work tasks by the agent, 
+only specify high level objectives (unless specifics were provided in the feedback). 
+Depending on the feedback, you may need to update `SEED.md`.
 2. Complete any tasks already in tasks.md.
 3. Check the code to see if the top item in `todo.md` has been completed.
 4. If not, plan out the tasks required to complete the item (see bellow) 
@@ -20,9 +23,10 @@ only after you are confident it is complete.
 4. Run `scripts/pre_commit.sh`.
 5. Review the change referencing `code_review.md`. Fix any issues you find. 
 Run `scripts/pre_commit.sh` again if there are any changes.
-6. For this task, come up with a definition of done (DoD), the last task should 
-be checking whether the change meets the DoD, and if it meets the definition, 
-do the following:
+6. For this task, come up with a definition of done (DoD) and write a 
+check against that as the task (don't say writing a DoD is part of the task). 
+The last task should be checking whether the change meets the DoD, and if it 
+meets the definition, do the following:
 - Add an entry to `work_log.md` for the item. 
 - Remove the item from the todo list.
 

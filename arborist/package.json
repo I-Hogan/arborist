@@ -1,0 +1,14 @@
+{
+  "name": "arborist-runner",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@biomejs/biome": "latest"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "node --test",
+    "precommit": "./scripts/pre_commit.sh"
+  }
+}

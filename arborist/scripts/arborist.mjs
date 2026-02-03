@@ -5,66 +5,76 @@ import path from "node:path";
 import process from "node:process";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-
-// Treat a title-only list file as "done" without parsing task contents.
-const hasWorkItems = (contents) =>
-  contents
-    .split(/\r?\n/)
-    .some((raw) => raw.trim() && !raw.trim().startsWith("#"));
+import { clearListFiles } from "../src/list-cleanup.js";
+import { hasWorkItems } from "../src/list-utils.js";
+import { discoverProjects } from "../src/project-discovery.js";
 
 const sleep = (ms) =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
 
-const readFirstLine = (contents) => {
-  const [firstLine] = contents.split(/\r?\n/);
-  return firstLine ?? "";
-};
+const parseActiveProjects = (contents) =>
+  contents
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith("#"));
 
-const clearListFile = async (filePath) => {
-  if (!fs.existsSync(filePath)) {
-    return;
+const loadActiveProjects = async (activeProjectsPath) => {
+  try {
+    const contents = await fsp.readFile(activeProjectsPath, "utf8");
+    return parseActiveProjects(contents);
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      return null;
+    }
+    throw error;
   }
-  const contents = await fsp.readFile(filePath, "utf8");
-  const firstLine = readFirstLine(contents);
-  const updated = firstLine ? `${firstLine}\n` : "";
-  await fsp.writeFile(filePath, updated, "utf8");
 };
 
-const hasProjectIndicators = (projectDir) => {
-  const indicators = [
-    "tasks.md",
-    "todo.md",
-    "SEED.md",
-    "feedback.md",
-    "user_requests.md",
-  ];
-  return indicators.some((fileName) =>
-    fs.existsSync(path.join(projectDir, fileName))
-  );
-};
+const resolveActiveProjects = async (rootDir, activeProjectsPath) => {
+  const activeProjects = await loadActiveProjects(activeProjectsPath);
+  if (!activeProjects || activeProjects.length === 0) {
+    return { projects: null, missing: [] };
+  }
 
-const discoverProjects = async (rootDir) => {
   const projects = [];
+  const missing = [];
+  const seen = new Set();
 
-  if (hasProjectIndicators(rootDir)) {
-    projects.push(rootDir);
-  }
-
-  const entries = await fsp.readdir(rootDir, { withFileTypes: true });
-  for (const entry of entries) {
-    if (!entry.isDirectory()) {
+  for (const entry of activeProjects) {
+    if (seen.has(entry)) {
       continue;
     }
-    if (entry.name.startsWith(".") || entry.name === "node_modules") {
+    seen.add(entry);
+
+    const resolved = path.resolve(rootDir, entry);
+    const relative = path.relative(rootDir, resolved);
+    if (relative.startsWith("..") || path.isAbsolute(relative)) {
+      missing.push({ entry, reason: "outside the workspace root" });
       continue;
     }
-    const candidate = path.join(rootDir, entry.name);
-    projects.push(candidate);
+
+    let stats;
+    try {
+      stats = await fsp.stat(resolved);
+    } catch (error) {
+      if (error?.code === "ENOENT") {
+        missing.push({ entry, reason: "folder not found" });
+        continue;
+      }
+      throw error;
+    }
+
+    if (!stats.isDirectory()) {
+      missing.push({ entry, reason: "not a folder" });
+      continue;
+    }
+
+    projects.push(resolved);
   }
 
-  return projects;
+  return { projects, missing };
 };
 
 const processProject = async ({
@@ -256,9 +266,12 @@ const processProject = async ({
   }
 
   if (finishedWithoutWork && !sawTimeout) {
-    await clearListFile(tasksPath);
-    await clearListFile(todoPath);
-    await clearListFile(userRequestsPath);
+    await clearListFiles([
+      tasksPath,
+      todoPath,
+      userRequestsPath,
+      feedbackPath,
+    ]);
   } else if (finishedWithoutWork && sawTimeout) {
     console.log(
       "Skipping list clearing because a previous task timed out in this run."
@@ -271,6 +284,7 @@ const main = async () => {
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const arboristDir = path.resolve(scriptDir, "..");
   const repoRoot = path.resolve(arboristDir, "..");
+  const activeProjectsPath = path.join(arboristDir, "active_projects");
   const rootDir = path.resolve(args[0] ?? repoRoot);
   if (!fs.existsSync(rootDir)) {
     console.error(`Projects folder not found: ${rootDir}`);
@@ -279,12 +293,35 @@ const main = async () => {
 
   // Fixed 4-hour budget for each project run.
   const timeBudget = 4 * 60 * 60 * 1000;
+  const warnedMissing = new Set();
 
   while (true) {
-    const projects = await discoverProjects(rootDir);
+    const { projects: configuredProjects, missing } =
+      await resolveActiveProjects(rootDir, activeProjectsPath);
+    const missingSet = new Set(missing.map((entry) => entry.entry));
+    for (const entry of warnedMissing) {
+      if (!missingSet.has(entry)) {
+        warnedMissing.delete(entry);
+      }
+    }
+    for (const missingEntry of missing) {
+      if (warnedMissing.has(missingEntry.entry)) {
+        continue;
+      }
+      warnedMissing.add(missingEntry.entry);
+      console.warn(
+        `Warning: active_projects entry "${missingEntry.entry}" does not match a folder in ${rootDir} (${missingEntry.reason}).`
+      );
+    }
+
+    const usingActiveProjects = configuredProjects !== null;
+    const projects =
+      configuredProjects ?? (await discoverProjects(rootDir));
     if (projects.length === 0) {
       console.log(
-        `No projects with tasks.md or todo.md found in ${rootDir}.`
+        usingActiveProjects
+          ? `No active_projects entries resolved to folders in ${rootDir}.`
+          : `No projects with tasks.md or todo.md found in ${rootDir}.`
       );
     }
 

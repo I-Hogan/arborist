@@ -37,6 +37,9 @@ There are two main testing paradigms that need to be established:
 These should be set up at the start of the project. None of these tests 
 should take more than 1 second to run. Find a way to parallelize them.
 
+Ideally tests are located close to the files they are testing (not in) rather 
+than being in a separate tests/ directory.
+
 ### Integration tests
 
 These should look as close to what the user does as possible.
@@ -49,3 +52,11 @@ Integration tests should be set up once the interface has been built.
 ## Development
 
 - If you come across a bug, if it is small fix it, if it is large log it in the backlog.
+
+## Documentation
+
+- Each file should have an explanation of what it does at the top.
+- Each function/class/datasctructure/etc. should have a description of what it does.
+  - Co-located documentation.
+- Complex or unintuitive individual lines of code should have comments to help 
+developers understand what is going on.
