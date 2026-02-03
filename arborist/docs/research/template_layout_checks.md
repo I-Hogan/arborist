@@ -6,9 +6,9 @@ expected locations after the template move.
 
 ## Plan
 - Add a fast Node test that inspects `templates/` at repo root.
-- Assert the root `templates/` directory only contains the expected
-  subdirectories (`arborist`, `docs`, `experiments`, `scripts`).
+- Assert the root `templates/` directory contains the expected subdirectories
+  (`arborist`, `docs`, `experiments`, `scripts`) plus `.pre-commit-config.yaml`.
 - Assert the base template files live under `templates/arborist` and are
   present as files.
-- Rely on the existing `scripts/test.sh` runner so the check executes during
-  `scripts/pre_commit.sh`.
+- Rely on `scripts/pre_commit.sh` so the check runs alongside the fast test
+  suite.

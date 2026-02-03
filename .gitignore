@@ -1,5 +1,18 @@
+# Ignore top-level project directories except arborist/
+/*/
+!/arborist/
+!/arborist/**
+
 # Node
 node_modules/
+.npm/
+.pnpm-store/
+.parcel-cache/
+.turbo/
+.next/
+.nuxt/
+.svelte-kit/
+.tsbuildinfo
 
 # Logs
 npm-debug.log*
@@ -11,21 +24,32 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 .idea/
+.vscode/
 
 # Environment
 .env
 .env.*
+.venv/
 *.venv
 *.venv/
+.direnv/
 
 # Coverage / build
 coverage/
 dist/
+build/
+out/
+htmlcov/
+.coverage
 
 # Codex
 .codex/
 
-# Ignore top-level project directories except arborist/
-/*/
-!/arborist/
-!/arborist/**
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/

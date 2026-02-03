@@ -10,6 +10,7 @@ const templatesDir = path.join(projectRoot, "templates");
 const arboristTemplatesDir = path.join(templatesDir, "arborist");
 
 const requiredTemplateDirs = ["arborist", "docs", "experiments", "scripts"];
+const requiredTemplateRootFiles = [".pre-commit-config.yaml"];
 const baseTemplateFiles = [
   "AGENTS.md",
   "backlog.md",
@@ -40,6 +41,12 @@ const assertIsFile = async (filePath) => {
 test("template root includes required directories", async () => {
   for (const dirName of requiredTemplateDirs) {
     await assertIsDirectory(path.join(templatesDir, dirName));
+  }
+});
+
+test("template root includes required files", async () => {
+  for (const fileName of requiredTemplateRootFiles) {
+    await assertIsFile(path.join(templatesDir, fileName));
   }
 });
 

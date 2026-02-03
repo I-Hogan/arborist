@@ -52,7 +52,7 @@ project with a fixed time budget, and keeps looping for continuous maintenance.
 
 ## Testing Strategy
 - Fast unit tests only (`node --test`) and kept under one second per test file.
-- Lightweight Bash checks executed from `scripts/test.sh`.
+- Lightweight Bash checks executed from `scripts/pre_commit.sh`.
 - Integration tests deferred until a richer CLI interface exists.
 
 ## Operational Notes

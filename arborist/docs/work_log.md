@@ -43,3 +43,12 @@ Feb 3, 2026: Enforce template layout checks for Arborist templates
 - Confirmed the template layout check covers base template files under `templates/arborist` and required template directories.
 - Verified Arborist references the updated template locations in setup documentation.
 - Ran `node --test tests/template-layout.test.js`; `scripts/pre_commit.sh` failed at the Biome step due to npm registry connectivity (EAI_AGAIN).
+
+Feb 3, 2026: Add safety-focused pre-commit hook support to templates and existing projects
+- Verified `.pre-commit-config.yaml` in the project root and `templates/arborist` includes hooks for conflict markers, secrets, large files, symlinks, and config validation.
+- Confirmed setup documentation references `pre-commit install` for enabling the safety hooks.
+- Ran `scripts/pre_commit.sh`; Biome failed because `npm` could not reach the registry (EAI_AGAIN).
+
+Feb 3, 2026: Relocate template pre-commit config and add root config
+- Moved the template `.pre-commit-config.yaml` to `templates/.pre-commit-config.yaml`.
+- Added `.pre-commit-config.yaml` at the repository root to mirror the Arborist configuration.

@@ -52,6 +52,8 @@ Integration tests should be set up once the interface has been built.
 ## Development
 
 - If you come across a bug, if it is small fix it, if it is large log it in the backlog.
+- Add generated, local-only, and sensitive files to `.gitignore` as soon as they appear.
+  - sub-project `.gitignore` if it exists, otherwise project root `.gitignore`.
 
 ## Documentation
 

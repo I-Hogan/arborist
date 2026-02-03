@@ -12,11 +12,16 @@ those projects with a fixed time budget, and loops continuously.
 - Node.js (ESM-capable, Node 18+ recommended)
 - npm
 - `codex` CLI on PATH
+- Optional: `pre-commit` for safety hooks
 
 ## Key Scripts
 - `scripts/run_arborist.sh`: launch the runner.
 - `scripts/pre_commit.sh`: format, lint, and run fast tests.
-- `scripts/test.sh`: run unit tests.
+
+## Safety Hooks
+If you have `pre-commit` installed, run `pre-commit install` to enable safety
+checks (merge conflict markers, secrets, large files, symlinks, and config
+validation). To run them manually, use `pre-commit run --all-files`.
 
 ## Index
 - `spec.md` — high-level plan and technical decisions.
