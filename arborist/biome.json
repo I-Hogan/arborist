@@ -1,6 +1,6 @@
 {
   "files": {
-    "ignore": ["node_modules", "dist"]
+    "includes": ["**/*", "!!**/node_modules", "!!**/dist"]
   },
   "formatter": {
     "enabled": true,

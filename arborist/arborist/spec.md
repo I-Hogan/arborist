@@ -31,12 +31,11 @@ project with a fixed time budget, and keeps looping for continuous maintenance.
   Codex runs, and manages list file cleanup.
 - `scripts/run_arborist.sh` (Bash) ensures Node/npm availability, installs
   dependencies at repo root, then launches the Node entry point.
-- Project indicators: `tasks.md`, `todo.md`, `feedback.md`, `SEED.md`,
-  `user_requests.md`.
+- Project indicators: `arborist/tasks.md`, `arborist/todo.md`, `arborist/feedback.md`, `SEED.md`.
 
 ## Data Flow
 1. Discover projects with indicator files.
-2. Read `todo.md`, `tasks.md`, and `feedback.md` to determine remaining work.
+2. Read `arborist/todo.md`, `arborist/tasks.md`, and `arborist/feedback.md` to determine remaining work.
 3. Spawn `codex exec` with the appropriate prompt for each project.
 4. When all work is complete, clear list files to titles only.
 

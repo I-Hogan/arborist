@@ -14,7 +14,7 @@ brief explanations of decisions, etc.
 
 
 Feb 3, 2026: Complete project setup (`tasks.md` pre-filled)
-- Added a high-level plan and tooling notes to `spec.md` and updated README index entries.
+- Added a high-level plan and tooling notes to `arborist/spec.md` and updated README index entries.
 - Created `code_review.md` for manual review checks.
 - Added a Bash test and updated the test runner to execute fast tests in parallel.
 - Added MVP work items to `todo.md` for discovery, list cleanup, and documentation.
@@ -52,3 +52,8 @@ Feb 3, 2026: Add safety-focused pre-commit hook support to templates and existin
 Feb 3, 2026: Relocate template pre-commit config and add root config
 - Moved the template `.pre-commit-config.yaml` to `templates/.pre-commit-config.yaml`.
 - Added `.pre-commit-config.yaml` at the repository root to mirror the Arborist configuration.
+
+Feb 3, 2026: Align Arborist structure with templates and validate template layout
+- Verified `templates/` contains the required subdirectories and root `.pre-commit-config.yaml`, with base files under `templates/arborist`.
+- Confirmed `scripts/arborist.mjs` validates template and project layouts before processing projects.
+- Updated Biome config ignore settings and set `PRE_COMMIT_HOME` in `scripts/pre_commit.sh`; `scripts/pre_commit.sh` still failed running pre-commit hooks because GitHub could not be resolved.

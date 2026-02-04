@@ -24,6 +24,6 @@ checks (merge conflict markers, secrets, large files, symlinks, and config
 validation). To run them manually, use `pre-commit run --all-files`.
 
 ## Index
-- `spec.md` — high-level plan and technical decisions.
+- `arborist/spec.md` — high-level plan and technical decisions.
 - `code_review.md` — manual review checklist for changes.
 - `docs/README.md` — project documentation hub.

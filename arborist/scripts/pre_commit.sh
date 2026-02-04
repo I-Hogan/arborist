@@ -40,6 +40,8 @@ if command -v pre-commit >/dev/null 2>&1; then
   log_step "Running pre-commit hooks"
   (
     cd "$project_root"
+    export PRE_COMMIT_HOME="${TMPDIR:-/tmp}/arborist-pre-commit"
+    mkdir -p "$PRE_COMMIT_HOME"
     pre-commit run --config "$precommit_config" --all-files
   )
 else

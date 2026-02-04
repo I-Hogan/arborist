@@ -1,13 +1,21 @@
 #!/usr/bin/env node
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { clearListFiles } from "../src/list-cleanup.js";
 import { hasWorkItems } from "../src/list-utils.js";
 import { discoverProjects } from "../src/project-discovery.js";
+import {
+  formatProjectLayoutIssues,
+  formatTemplateLayoutIssues,
+  hasProjectLayoutIssues,
+  hasTemplateLayoutIssues,
+  validateProjectLayout,
+  validateTemplateLayout,
+} from "../src/template-validation.js";
 
 const sleep = (ms) =>
   new Promise((resolve) => {
@@ -77,21 +85,13 @@ const resolveActiveProjects = async (rootDir, activeProjectsPath) => {
   return { projects, missing };
 };
 
-const processProject = async ({
-  projectDir,
-  arboristDir,
-  repoRoot,
-  timeBudget,
-}) => {
+const processProject = async ({ projectDir, arboristDir, repoRoot, timeBudget }) => {
   const projectSetupPath = path.join(arboristDir, "project_setup.md");
-  const completeNextItemPath = path.join(
-    arboristDir,
-    "complete_next_item.md"
-  );
-  const tasksPath = path.join(projectDir, "tasks.md");
-  const todoPath = path.join(projectDir, "todo.md");
-  const userRequestsPath = path.join(projectDir, "user_requests.md");
-  const feedbackPath = path.join(projectDir, "feedback.md");
+  const completeNextItemPath = path.join(arboristDir, "complete_next_item.md");
+  const projectArboristDir = path.join(projectDir, "arborist");
+  const tasksPath = path.join(projectArboristDir, "tasks.md");
+  const todoPath = path.join(projectArboristDir, "todo.md");
+  const feedbackPath = path.join(projectArboristDir, "feedback.md");
   const agentsPath = path.join(projectDir, "AGENTS.md");
 
   const spawnCodexExec = (prompt) => {
@@ -135,9 +135,7 @@ const processProject = async ({
       let killTimer;
       const timeout = setTimeout(() => {
         timedOut = true;
-        console.log(
-          `codex exec exceeded ${timeoutMs}ms; stopping and retrying.`
-        );
+        console.log(`codex exec exceeded ${timeoutMs}ms; stopping and retrying.`);
         child.kill("SIGTERM");
         killTimer = setTimeout(() => child.kill("SIGKILL"), 5000);
       }, timeoutMs);
@@ -182,10 +180,12 @@ const processProject = async ({
     return;
   }
 
-  // If core project files are missing, send Codex to the project setup instructions.
-  if (!fs.existsSync(tasksPath) || !fs.existsSync(todoPath)) {
+  const layoutIssues = await validateProjectLayout(projectDir);
+  if (hasProjectLayoutIssues(layoutIssues)) {
+    const layoutSummary = formatProjectLayoutIssues(layoutIssues);
     const setupPrompt = [
-      `tasks.md or todo.md is missing in ${projectDir}.`,
+      `Project template files are missing or misplaced in ${projectDir}.`,
+      layoutSummary,
       `Follow the project setup instructions in ${projectSetupPath}.`,
       `Read AGENTS.md at ${agentsPath} before you begin if it exists.`,
       "",
@@ -194,7 +194,7 @@ const processProject = async ({
     await runCodex(setupPrompt);
   }
 
-  // Loop until time runs out or todo.md and tasks.md have no remaining items.
+  // Loop until time runs out or arborist/todo.md and arborist/tasks.md have no remaining items.
   while (true) {
     const timeLeft = deadline - Date.now();
     if (timeLeft <= 0) {
@@ -203,7 +203,7 @@ const processProject = async ({
     }
 
     if (!fs.existsSync(todoPath) || !fs.existsSync(tasksPath)) {
-      console.log("todo.md or tasks.md is still missing. Stopping.");
+      console.log("arborist/todo.md or arborist/tasks.md is still missing. Stopping.");
       break;
     }
 
@@ -218,27 +218,21 @@ const processProject = async ({
       }
     } catch (error) {
       console.error(
-        `Unable to read todo.md, tasks.md, or feedback.md: ${error.message}`
+        `Unable to read arborist/todo.md, arborist/tasks.md, or arborist/feedback.md: ${error.message}`,
       );
       process.exit(1);
     }
 
-    const hasFeedbackItems = feedbackContents
-      ? hasWorkItems(feedbackContents)
-      : false;
-    if (
-      !hasWorkItems(todoContents) &&
-      !hasWorkItems(tasksContents) &&
-      !hasFeedbackItems
-    ) {
+    const hasFeedbackItems = feedbackContents ? hasWorkItems(feedbackContents) : false;
+    if (!hasWorkItems(todoContents) && !hasWorkItems(tasksContents) && !hasFeedbackItems) {
       console.log(
-        "todo.md, tasks.md, and feedback.md have no remaining items. Stopping."
+        "arborist/todo.md, arborist/tasks.md, and arborist/feedback.md have no remaining items. Stopping.",
       );
       finishedWithoutWork = true;
       break;
     }
 
-    // Don't parse todo: point Codex at todo.md and ask for the next item.
+    // Don't parse todo: point Codex at arborist/todo.md and ask for the next item.
     const promptLines = [
       `Complete the next item in ${todoPath}.`,
       `Follow the instructions in ${completeNextItemPath}.`,
@@ -247,11 +241,7 @@ const processProject = async ({
     ];
 
     if (isFirstTask) {
-      promptLines.splice(
-        1,
-        0,
-        `Before starting, read AGENTS.md at ${agentsPath} if it exists.`
-      );
+      promptLines.splice(1, 0, `Before starting, read AGENTS.md at ${agentsPath} if it exists.`);
     }
 
     const taskPrompt = promptLines.join("\n");
@@ -266,16 +256,9 @@ const processProject = async ({
   }
 
   if (finishedWithoutWork && !sawTimeout) {
-    await clearListFiles([
-      tasksPath,
-      todoPath,
-      userRequestsPath,
-      feedbackPath,
-    ]);
+    await clearListFiles([tasksPath, todoPath, feedbackPath]);
   } else if (finishedWithoutWork && sawTimeout) {
-    console.log(
-      "Skipping list clearing because a previous task timed out in this run."
-    );
+    console.log("Skipping list clearing because a previous task timed out in this run.");
   }
 };
 
@@ -284,10 +267,18 @@ const main = async () => {
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const arboristDir = path.resolve(scriptDir, "..");
   const repoRoot = path.resolve(arboristDir, "..");
+  const templatesDir = path.join(arboristDir, "templates");
   const activeProjectsPath = path.join(arboristDir, "active_projects");
   const rootDir = path.resolve(args[0] ?? repoRoot);
   if (!fs.existsSync(rootDir)) {
     console.error(`Projects folder not found: ${rootDir}`);
+    process.exit(1);
+  }
+
+  const templateIssues = await validateTemplateLayout(templatesDir);
+  if (hasTemplateLayoutIssues(templateIssues)) {
+    const summary = formatTemplateLayoutIssues(templateIssues);
+    console.error(`Template layout issues detected in ${templatesDir}:\n${summary}`);
     process.exit(1);
   }
 
@@ -296,8 +287,10 @@ const main = async () => {
   const warnedMissing = new Set();
 
   while (true) {
-    const { projects: configuredProjects, missing } =
-      await resolveActiveProjects(rootDir, activeProjectsPath);
+    const { projects: configuredProjects, missing } = await resolveActiveProjects(
+      rootDir,
+      activeProjectsPath,
+    );
     const missingSet = new Set(missing.map((entry) => entry.entry));
     for (const entry of warnedMissing) {
       if (!missingSet.has(entry)) {
@@ -310,18 +303,17 @@ const main = async () => {
       }
       warnedMissing.add(missingEntry.entry);
       console.warn(
-        `Warning: active_projects entry "${missingEntry.entry}" does not match a folder in ${rootDir} (${missingEntry.reason}).`
+        `Warning: active_projects entry "${missingEntry.entry}" does not match a folder in ${rootDir} (${missingEntry.reason}).`,
       );
     }
 
     const usingActiveProjects = configuredProjects !== null;
-    const projects =
-      configuredProjects ?? (await discoverProjects(rootDir));
+    const projects = configuredProjects ?? (await discoverProjects(rootDir));
     if (projects.length === 0) {
       console.log(
         usingActiveProjects
           ? `No active_projects entries resolved to folders in ${rootDir}.`
-          : `No projects with tasks.md or todo.md found in ${rootDir}.`
+          : `No projects with arborist/tasks.md or arborist/todo.md found in ${rootDir}.`,
       );
     }
 

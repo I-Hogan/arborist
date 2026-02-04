@@ -2,23 +2,19 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 
-const indicatorFiles = [
-  "tasks.md",
-  "todo.md",
-  "SEED.md",
-  "feedback.md",
-  "user_requests.md",
-];
+const rootIndicatorFiles = ["SEED.md"];
+const arboristIndicatorFiles = ["tasks.md", "todo.md", "feedback.md"];
 
-const hasProjectIndicators = (projectDir) =>
-  indicatorFiles.some((fileName) =>
-    fs.existsSync(path.join(projectDir, fileName))
+const hasProjectIndicators = (projectDir) => {
+  const arboristDir = path.join(projectDir, "arborist");
+  return (
+    rootIndicatorFiles.some((fileName) => fs.existsSync(path.join(projectDir, fileName))) ||
+    arboristIndicatorFiles.some((fileName) => fs.existsSync(path.join(arboristDir, fileName)))
   );
+};
 
 const isCandidateDirectory = (entry) =>
-  entry.isDirectory() &&
-  !entry.name.startsWith(".") &&
-  entry.name !== "node_modules";
+  entry.isDirectory() && !entry.name.startsWith(".") && entry.name !== "node_modules";
 
 const discoverProjects = async (rootDir) => {
   const projects = [];

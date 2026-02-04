@@ -1,7 +1,7 @@
 # A list of tasks that need doing. (Should be empty except for the title when there are not tasks remaining)
 
 1. Come up with a high level plan for the project and write it out in 
-`spec.md`. Brainstorm which language(s)/framework(s) you will need to start 
+`arborist/spec.md`. Brainstorm which language(s)/framework(s) you will need to start 
 the project (include testing and code style frameworks/strategies). Follow 
 `best_practices.md` and fill in those details here as well. Update the index 
 sections of the readmes.
