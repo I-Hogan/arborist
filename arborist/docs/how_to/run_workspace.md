@@ -61,11 +61,14 @@ the standard Arborist layout.
 From the Arborist repo:
 
 ```
-./scripts/run_arborist.sh <projects-root>
+./scripts/run_workspace.sh <projects-root>
 ```
 
 If you omit `<projects-root>`, Arborist uses the repo root as the workspace
 folder.
+
+`run_workspace.sh` also starts the local website and prints the URL
+(`http://localhost:7788` by default).
 
 ## Expected behavior
 - Scans the workspace root and its immediate subdirectories (excluding hidden

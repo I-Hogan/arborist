@@ -3,11 +3,16 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@biomejs/biome": "latest"
+    "@biomejs/biome": "latest",
+    "astro": "5.17.1"
   },
   "scripts": {
     "lint": "biome check .",
     "format": "biome check --write .",
+    "ui": "node scripts/web_ui.mjs",
+    "ui:build": "astro build --root web_ui",
+    "ui:dev": "astro dev --root web_ui --host 127.0.0.1 --port 7788",
+    "ui:preview": "astro preview --root web_ui --host 127.0.0.1 --port 7788",
     "test": "node --test",
     "precommit": "./scripts/pre_commit.sh"
   }

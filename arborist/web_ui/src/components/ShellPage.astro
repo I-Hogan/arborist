@@ -1,0 +1,119 @@
+---
+interface Props {
+  variant?: 5;
+}
+
+const { variant = 5 } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Arborist Greenhouse</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles-options.css" />
+  </head>
+  <body class={`variant-${variant}`}>
+    <div class="ambient" aria-hidden="true"></div>
+
+    <div class="app-shell">
+      <header class="topbar" style="--i: 0">
+        <div class="hero-text">
+          <p class="eyebrow">Arborist Greenhouse</p>
+        </div>
+      </header>
+
+      <div class="layout">
+        <aside class="sidebar">
+          <section class="panel status-panel" style="--i: 1" role="status" aria-live="polite">
+            <div class="panel-header">
+              <h2>Session Status</h2>
+              <span class="panel-meta">Live</span>
+            </div>
+            <div class="status-row">
+              <span>Server</span>
+              <span class="pill pill-live">Online</span>
+            </div>
+            <div class="status-row">
+              <span>Indexer</span>
+              <span class="pill">Scanning</span>
+            </div>
+            <div class="status-row">
+              <span>Last Refresh</span>
+              <span id="status-time">Loading…</span>
+            </div>
+            <p class="save-alert" id="save-state-status" role="status" aria-live="polite"></p>
+          </section>
+
+          <section class="panel project-panel" style="--i: 2">
+            <div class="panel-header">
+              <h2>Projects</h2>
+              <span class="panel-meta" id="project-meta">Loading…</span>
+            </div>
+            <p class="panel-meta project-help">Click row to focus · Click state label to pause/resume</p>
+            <ul class="project-list" id="project-list" aria-live="polite"></ul>
+            <p class="project-alert" id="project-alert" role="status" aria-live="polite"></p>
+          </section>
+        </aside>
+
+        <main class="main">
+          <section class="panel feedback-panel" style="--i: 1">
+            <div class="panel-header">
+              <h2>Feedback</h2>
+              <span class="panel-meta" id="feedback-meta">Loading…</span>
+            </div>
+            <p class="feedback-alert" id="feedback-alert" role="status" aria-live="polite"></p>
+            <div class="feedback-queue">
+              <div class="feedback-section-header">
+                <h3>Queue</h3>
+                <span class="panel-meta">Pending</span>
+              </div>
+              <ul class="feedback-list" id="feedback-list" aria-live="polite"></ul>
+              <p class="feedback-empty" id="feedback-empty">No feedback queued yet.</p>
+            </div>
+            <label class="field">
+              <span>New Feedback</span>
+              <textarea
+                id="feedback-message"
+                rows="4"
+                placeholder="Describe the change you want Arborist to make…"
+              ></textarea>
+            </label>
+            <div class="feedback-responses">
+              <div class="feedback-section-header">
+                <h3>Responses</h3>
+                <span class="panel-meta">Click to follow up · click another response to switch</span>
+              </div>
+              <ul class="response-list" id="response-list" aria-live="polite"></ul>
+              <p class="feedback-empty" id="response-empty">No responses yet.</p>
+              <div class="followup-form" id="followup-form" hidden>
+                <div class="followup-header">
+                  <span class="summary-label">Follow-up Target</span>
+                  <span class="followup-context" id="followup-context">None selected</span>
+                </div>
+                <label class="field">
+                  <span>Message (optional)</span>
+                  <textarea
+                    id="followup-message"
+                    rows="3"
+                    placeholder="Add additional detail for the follow-up…"
+                  ></textarea>
+                </label>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <footer class="footer">
+        <p>Arborist UI shell. Live data for projects, feedback, and save state.</p>
+        <p class="footer-link">
+          Local URL: <a id="local-url" href="/" rel="noopener">Loading…</a>
+        </p>
+      </footer>
+    </div>
+
+    <script is:inline src="/app.js"></script>
+  </body>
+</html>

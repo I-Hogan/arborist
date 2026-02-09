@@ -10,3 +10,5 @@ This includes:
 ## Index
 - `tech_stack.md` — language/runtime and tooling decisions.
 - `template_layout_checks.md` — plan for enforcing template file locations.
+- `web_ui_server.md` — lightweight web UI server options and decision.
+- `web_ui_framework.md` — framework options and decision for the web UI migration.
